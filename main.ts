@@ -1,872 +1,709 @@
-namespace smoothPortals {
+namespace portalPhysics {
 
-    // =========================================================
-    // BUTTON ENUM
-    // =========================================================
+    // ============================================================
+    // SETTINGS
+    // ============================================================
 
     export enum PortalButton {
-        //% block="A"
         A = 0,
-
-        //% block="B"
         B = 1,
-
-        //% block="left"
         Left = 2,
-
-        //% block="right"
         Right = 3,
-
-        //% block="up"
         Up = 4,
-
-        //% block="down"
         Down = 5
     }
 
-    // =========================================================
-    // SPRITE KINDS
-    // =========================================================
+    let player: Sprite = null
 
-    const blueBulletKind = SpriteKind.create()
-    const orangeBulletKind = SpriteKind.create()
+    let bluePortal: Sprite = null
+    let orangePortal: Sprite = null
 
-    // =========================================================
-    // VARIABLES
-    // =========================================================
+    let portalSurfaceTile: Image = null
 
-    let playerSprite: Sprite = null
+    let bluePortalUp: Image = null
+    let bluePortalDown: Image = null
+    let bluePortalLeft: Image = null
+    let bluePortalRight: Image = null
 
-    let bluePortalSprite: Sprite = null
-    let orangePortalSprite: Sprite = null
+    let orangePortalUp: Image = null
+    let orangePortalDown: Image = null
+    let orangePortalLeft: Image = null
+    let orangePortalRight: Image = null
 
-    let blueNX = 0
-    let blueNY = -1
+    let blueProjectileImage: Image = null
+    let orangeProjectileImage: Image = null
 
-    let orangeNX = 0
-    let orangeNY = -1
+    let blueButton = PortalButton.A
+    let orangeButton = PortalButton.B
 
-    let selectedBlueButton = PortalButton.A
-    let selectedOrangeButton = PortalButton.B
+    let portalSpeed = 150
+    let teleportTime = 300
+    let teleportCooldown = 350
 
-    let momentumOn = true
-    let physicsOn = true
+    let blueNormalX = 0
+    let blueNormalY = -1
 
-    let isTeleportingNow = false
+    let orangeNormalX = 0
+    let orangeNormalY = -1
 
-    let teleportClock = 0
+    let teleporting = false
+    let lastTeleportTime = 0
 
-    let startX = 0
-    let startY = 0
+    const blueProjectileKind = SpriteKind.create()
+    const orangeProjectileKind = SpriteKind.create()
+    const portalKind = SpriteKind.create()
 
-    let destinationX = 0
-    let destinationY = 0
 
-    let oldVX = 0
-    let oldVY = 0
+    // ============================================================
+    // PLAYER
+    // ============================================================
 
-    let enterNX = 0
-    let enterNY = 0
-
-    let exitNX = 0
-    let exitNY = 0
-
-    let enterEvents: (() => void)[] = []
-    let exitEvents: (() => void)[] = []
-
-    const bulletSpeed = 140
-    const bulletLife = 3000
-
-    const teleportDuration = 300
-    const exitDistance = 20
-
-    // =========================================================
-    // PORTAL IMAGES
-    // =========================================================
-
-    const blueImage = img`
-        . . . . 8 8 8 8 . . . .
-        . . 8 9 9 9 9 9 9 8 . .
-        . 8 9 9 9 9 9 9 9 9 8 .
-        8 9 9 9 9 9 9 9 9 9 9 8
-        8 9 9 9 9 9 9 9 9 9 9 8
-        8 9 9 9 9 9 9 9 9 9 9 8
-        8 9 9 9 9 9 9 9 9 9 9 8
-        8 9 9 9 9 9 9 9 9 9 9 8
-        8 9 9 9 9 9 9 9 9 9 9 8
-        8 9 9 9 9 9 9 9 9 9 9 8
-        . 8 9 9 9 9 9 9 9 9 8 .
-        . . 8 9 9 9 9 9 9 8 . .
-    `
-
-    const orangeImage = img`
-        . . . . 5 5 5 5 . . . .
-        . . 5 4 4 4 4 4 4 5 . .
-        . 5 4 4 4 4 4 4 4 4 5 .
-        5 4 4 4 4 4 4 4 4 4 4 5
-        5 4 4 4 4 4 4 4 4 4 4 5
-        5 4 4 4 4 4 4 4 4 4 4 5
-        5 4 4 4 4 4 4 4 4 4 4 5
-        5 4 4 4 4 4 4 4 4 4 4 5
-        5 4 4 4 4 4 4 4 4 4 4 5
-        5 4 4 4 4 4 4 4 4 4 4 5
-        . 5 4 4 4 4 4 4 4 4 5 .
-        . . 5 4 4 4 4 4 4 5 . .
-    `
-
-    // =========================================================
-    // SET PLAYER
-    // =========================================================
-
-    //% block="set portal player to %sprite"
-    //% blockId=smoothPortals_setPlayer
-    export function setPortalPlayer(sprite: Sprite): void {
-        playerSprite = sprite
+    //% block="set portal player $sprite"
+    //% sprite.shadow=variables_get
+    export function setPortalPlayer(sprite: Sprite) {
+        player = sprite
     }
 
-    // =========================================================
+
+    // ============================================================
+    // PORTAL SURFACE
+    // ============================================================
+
+    //% block="set portal surface tile $tile"
+    //% tile.shadow=tileset_tile_picker
+    export function setPortalSurfaceTile(tile: Image) {
+        portalSurfaceTile = tile
+    }
+
+
+    // ============================================================
+    // BLUE PORTAL ART
+    // ============================================================
+
+    //% block="set blue portal up image $image"
+    //% imageLiteral=1
+    export function setBluePortalUpImage(image: Image) {
+        bluePortalUp = image
+    }
+
+    //% block="set blue portal down image $image"
+    //% imageLiteral=1
+    export function setBluePortalDownImage(image: Image) {
+        bluePortalDown = image
+    }
+
+    //% block="set blue portal left image $image"
+    //% imageLiteral=1
+    export function setBluePortalLeftImage(image: Image) {
+        bluePortalLeft = image
+    }
+
+    //% block="set blue portal right image $image"
+    //% imageLiteral=1
+    export function setBluePortalRightImage(image: Image) {
+        bluePortalRight = image
+    }
+
+
+    // ============================================================
+    // ORANGE PORTAL ART
+    // ============================================================
+
+    //% block="set orange portal up image $image"
+    //% imageLiteral=1
+    export function setOrangePortalUpImage(image: Image) {
+        orangePortalUp = image
+    }
+
+    //% block="set orange portal down image $image"
+    //% imageLiteral=1
+    export function setOrangePortalDownImage(image: Image) {
+        orangePortalDown = image
+    }
+
+    //% block="set orange portal left image $image"
+    //% imageLiteral=1
+    export function setOrangePortalLeftImage(image: Image) {
+        orangePortalLeft = image
+    }
+
+    //% block="set orange portal right image $image"
+    //% imageLiteral=1
+    export function setOrangePortalRightImage(image: Image) {
+        orangePortalRight = image
+    }
+
+
+    // ============================================================
+    // PROJECTILE ART
+    // ============================================================
+
+    //% block="set blue portal projectile image $image"
+    //% imageLiteral=1
+    export function setBlueProjectileImage(image: Image) {
+        blueProjectileImage = image
+    }
+
+    //% block="set orange portal projectile image $image"
+    //% imageLiteral=1
+    export function setOrangeProjectileImage(image: Image) {
+        orangeProjectileImage = image
+    }
+
+
+    // ============================================================
     // BUTTON SETTINGS
-    // =========================================================
+    // ============================================================
 
-    //% block="set blue portal button to %button"
-    //% blockId=smoothPortals_blueButton
-    export function chooseBlueButton(
-        button: PortalButton
-    ): void {
-        selectedBlueButton = button
+    //% block="blue portal button $button"
+    export function setBluePortalButton(button: PortalButton) {
+        blueButton = button
     }
 
-    //% block="set orange portal button to %button"
-    //% blockId=smoothPortals_orangeButton
-    export function chooseOrangeButton(
-        button: PortalButton
-    ): void {
-        selectedOrangeButton = button
+    //% block="orange portal button $button"
+    export function setOrangePortalButton(button: PortalButton) {
+        orangeButton = button
     }
 
-    // =========================================================
-    // MOMENTUM
-    // =========================================================
 
-    //% block="set portal momentum to %enabled"
-    //% blockId=smoothPortals_setMomentum
-    export function enableMomentum(
-        enabled: boolean
-    ): void {
-        momentumOn = enabled
+    // ============================================================
+    // PHYSICS SETTINGS
+    // ============================================================
+
+    //% block="portal projectile speed $speed"
+    //% speed.min=20 speed.max=300
+    export function setPortalProjectileSpeed(speed: number) {
+        portalSpeed = speed
     }
 
-    //% block="portal momentum is enabled"
-    //% blockId=smoothPortals_momentum
-    export function getMomentum(): boolean {
-        return momentumOn
+    //% block="portal teleport time $time ms"
+    //% time.min=50 time.max=1000
+    export function setPortalTeleportTime(time: number) {
+        teleportTime = time
     }
 
-    // =========================================================
-    // PHYSICS
-    // =========================================================
-
-    //% block="set portal physics to %enabled"
-    //% blockId=smoothPortals_setPhysics
-    export function enablePhysics(
-        enabled: boolean
-    ): void {
-        physicsOn = enabled
+    //% block="portal teleport cooldown $time ms"
+    //% time.min=0 time.max=2000
+    export function setPortalTeleportCooldown(time: number) {
+        teleportCooldown = time
     }
 
-    // =========================================================
-    // FIRE BLUE
-    // =========================================================
 
-    //% block="shoot blue portal"
-    //% blockId=smoothPortals_shootBlue
-    export function shootBluePortal(): void {
+    // ============================================================
+    // IMAGE HELPERS
+    // ============================================================
 
-        if (!physicsOn)
+    function getBluePortalImage(): Image {
+        if (blueNormalX < 0) {
+            if (bluePortalLeft != null) {
+                return bluePortalLeft
+            }
+        }
+
+        if (blueNormalX > 0) {
+            if (bluePortalRight != null) {
+                return bluePortalRight
+            }
+        }
+
+        if (blueNormalY < 0) {
+            if (bluePortalUp != null) {
+                return bluePortalUp
+            }
+        }
+
+        if (blueNormalY > 0) {
+            if (bluePortalDown != null) {
+                return bluePortalDown
+            }
+        }
+
+        return image.create(1, 1)
+    }
+
+
+    function getOrangePortalImage(): Image {
+        if (orangeNormalX < 0) {
+            if (orangePortalLeft != null) {
+                return orangePortalLeft
+            }
+        }
+
+        if (orangeNormalX > 0) {
+            if (orangePortalRight != null) {
+                return orangePortalRight
+            }
+        }
+
+        if (orangeNormalY < 0) {
+            if (orangePortalUp != null) {
+                return orangePortalUp
+            }
+        }
+
+        if (orangeNormalY > 0) {
+            if (orangePortalDown != null) {
+                return orangePortalDown
+            }
+        }
+
+        return image.create(1, 1)
+    }
+
+
+    // ============================================================
+    // PROJECTILE CREATION
+    // ============================================================
+
+    function createPortalProjectile(isBlue: boolean) {
+        if (player == null) {
             return
+        }
 
-        if (!playerSprite)
-            return
+        let imageToUse: Image
 
-        shootPortal(true)
-    }
+        if (isBlue) {
+            imageToUse = blueProjectileImage
+        } else {
+            imageToUse = orangeProjectileImage
+        }
 
-    // =========================================================
-    // FIRE ORANGE
-    // =========================================================
-
-    //% block="shoot orange portal"
-    //% blockId=smoothPortals_shootOrange
-    export function shootOrangePortal(): void {
-
-        if (!physicsOn)
-            return
-
-        if (!playerSprite)
-            return
-
-        shootPortal(false)
-    }
-
-    // =========================================================
-    // SHOOT PORTAL
-    // =========================================================
-
-    function shootPortal(isBlue: boolean): void {
+        if (imageToUse == null) {
+            imageToUse = image.create(3, 3)
+        }
 
         let dx = controller.dx()
         let dy = controller.dy()
 
+        // If the controller isn't currently pointing,
+        // use the player's velocity.
         if (dx == 0 && dy == 0) {
-
-            dx = playerSprite.vx
-            dy = playerSprite.vy
-
-            if (dx == 0 && dy == 0) {
-                dy = -1
-            }
+            dx = player.vx
+            dy = player.vy
         }
 
-        let length =
-            Math.sqrt(dx * dx + dy * dy)
+        // Default direction: up
+        if (dx == 0 && dy == 0) {
+            dy = -1
+        }
 
-        if (length == 0)
-            return
-
-        dx /= length
-        dy /= length
-
-        dx *= bulletSpeed
-        dy *= bulletSpeed
-
-        let bullet: Sprite
+        let projectile = sprites.createProjectileFromSprite(
+            imageToUse,
+            player,
+            dx,
+            dy
+        )
 
         if (isBlue) {
-
-            bullet = sprites.createProjectileFromSprite(
-                blueImage,
-                playerSprite,
-                dx,
-                dy
-            )
-
-            bullet.setKind(blueBulletKind)
-
+            projectile.setKind(blueProjectileKind)
         } else {
-
-            bullet = sprites.createProjectileFromSprite(
-                orangeImage,
-                playerSprite,
-                dx,
-                dy
-            )
-
-            bullet.setKind(orangeBulletKind)
+            projectile.setKind(orangeProjectileKind)
         }
 
-        bullet.lifespan = bulletLife
+        projectile.setFlag(SpriteFlag.GhostThroughWalls, true)
+        projectile.lifespan = 5000
+
+        // Normalize the velocity so speed is consistent
+        let length = Math.sqrt(
+            projectile.vx * projectile.vx +
+            projectile.vy * projectile.vy
+        )
+
+        if (length > 0) {
+            projectile.vx = projectile.vx / length * portalSpeed
+            projectile.vy = projectile.vy / length * portalSpeed
+        }
     }
 
-    // =========================================================
-    // BLUE BULLET
-    // =========================================================
 
-    game.onUpdate(function () {
+    // ============================================================
+    // MANUAL SHOOT BLOCKS
+    // ============================================================
 
-        let bullets =
-            sprites.allOfKind(blueBulletKind)
+    //% block="shoot blue portal"
+    export function shootBluePortal() {
+        createPortalProjectile(true)
+    }
 
-        for (let bullet2 of bullets) {
+    //% block="shoot orange portal"
+    export function shootOrangePortal() {
+        createPortalProjectile(false)
+    }
 
-            checkBullet(bullet2, true)
+
+    // ============================================================
+    // PORTAL PLACEMENT
+    // ============================================================
+
+    function placeBluePortal(col: number, row: number, nx: number, ny: number) {
+        if (bluePortal != null) {
+            bluePortal.destroy()
         }
-    })
 
-    // =========================================================
-    // ORANGE BULLET
-    // =========================================================
+        blueNormalX = nx
+        blueNormalY = ny
 
-    game.onUpdate(function () {
+        bluePortal = sprites.create(
+            getBluePortalImage(),
+            portalKind
+        )
 
-        let bullets2 =
-            sprites.allOfKind(orangeBulletKind)
+        bluePortal.x = col * 16 + 8
+        bluePortal.y = row * 16 + 8
 
-        for (let bullet3 of bullets2) {
+        bluePortal.setFlag(SpriteFlag.Ghost, true)
+        bluePortal.setFlag(SpriteFlag.GhostThroughWalls, true)
+    }
 
-            checkBullet(bullet3, false)
+
+    function placeOrangePortal(col: number, row: number, nx: number, ny: number) {
+        if (orangePortal != null) {
+            orangePortal.destroy()
         }
-    })
 
-    // =========================================================
-    // BULLET COLLISION
-    // =========================================================
+        orangeNormalX = nx
+        orangeNormalY = ny
 
-    function checkBullet(
-        bullet: Sprite,
-        isBlue: boolean
-    ): void {
+        orangePortal = sprites.create(
+            getOrangePortalImage(),
+            portalKind
+        )
 
-        if (!bullet)
+        orangePortal.x = col * 16 + 8
+        orangePortal.y = row * 16 + 8
+
+        orangePortal.setFlag(SpriteFlag.Ghost, true)
+        orangePortal.setFlag(SpriteFlag.GhostThroughWalls, true)
+    }
+
+
+    // ============================================================
+    // FIND PORTAL SURFACE
+    // ============================================================
+
+    function checkProjectile(projectile: Sprite, isBlue: boolean) {
+        if (portalSurfaceTile == null) {
             return
+        }
 
-        let column =
-            Math.floor(bullet.x / 16)
+        let location = projectile.tilemapLocation()
 
-        let row =
-            Math.floor(bullet.y / 16)
-
-        if (column < 0 || row < 0)
+        if (!tiles.tileAtLocationEquals(location, portalSurfaceTile)) {
             return
-
-        let tile =
-            tiles.getTileLocation(
-                column,
-                row
-            )
-
-        if (!tiles.tileAtLocationIsWall(tile))
-            return
+        }
 
         let nx = 0
         let ny = 0
 
-        if (Math.abs(bullet.vx) >
-            Math.abs(bullet.vy)) {
-
-            if (bullet.vx > 0)
+        // Determine which direction the projectile hit from.
+        if (Math.abs(projectile.vx) > Math.abs(projectile.vy)) {
+            if (projectile.vx > 0) {
                 nx = -1
-            else
+            } else {
                 nx = 1
-
+            }
         } else {
-
-            if (bullet.vy > 0)
+            if (projectile.vy > 0) {
                 ny = -1
-            else
+            } else {
                 ny = 1
+            }
         }
-
-        createPortal(
-            isBlue,
-            column * 16 + 8,
-            row * 16 + 8,
-            nx,
-            ny
-        )
-
-        bullet.destroy()
-    }
-
-    // =========================================================
-    // CREATE PORTAL
-    // =========================================================
-
-    function createPortal(
-        isBlue: boolean,
-        x: number,
-        y: number,
-        nx: number,
-        ny: number
-    ): void {
 
         if (isBlue) {
-
-            if (bluePortalSprite)
-                bluePortalSprite.destroy()
-
-            bluePortalSprite =
-                sprites.create(
-                    blueImage,
-                    SpriteKind.Food
-                )
-
-            bluePortalSprite.setFlag(
-                SpriteFlag.Ghost,
-                true
+            placeBluePortal(
+                location.column,
+                location.row,
+                nx,
+                ny
             )
-
-            bluePortalSprite.setPosition(
-                x,
-                y
-            )
-
-            blueNX = nx
-            blueNY = ny
-
         } else {
+            placeOrangePortal(
+                location.column,
+                location.row,
+                nx,
+                ny
+            )
+        }
 
-            if (orangePortalSprite)
-                orangePortalSprite.destroy()
+        projectile.destroy()
+    }
 
-            orangePortalSprite =
-                sprites.create(
-                    orangeImage,
-                    SpriteKind.Food
+
+    // ============================================================
+    // TELEPORTING
+    // ============================================================
+
+    function tryTeleport() {
+        if (player == null) {
+            return
+        }
+
+        if (bluePortal == null || orangePortal == null) {
+            return
+        }
+
+        if (teleporting) {
+            return
+        }
+
+        if (game.runtime() - lastTeleportTime < teleportCooldown) {
+            return
+        }
+
+        let distanceBlue = Math.sqrt(
+            Math.pow(player.x - bluePortal.x, 2) +
+            Math.pow(player.y - bluePortal.y, 2)
+        )
+
+        let distanceOrange = Math.sqrt(
+            Math.pow(player.x - orangePortal.x, 2) +
+            Math.pow(player.y - orangePortal.y, 2)
+        )
+
+        if (distanceBlue < 12) {
+            if (movingIntoPortal(
+                player,
+                blueNormalX,
+                blueNormalY
+            )) {
+                teleportPlayer(
+                    bluePortal,
+                    orangePortal,
+                    blueNormalX,
+                    blueNormalY,
+                    orangeNormalX,
+                    orangeNormalY
                 )
-
-            orangePortalSprite.setFlag(
-                SpriteFlag.Ghost,
-                true
-            )
-
-            orangePortalSprite.setPosition(
-                x,
-                y
-            )
-
-            orangeNX = nx
-            orangeNY = ny
+            }
+        } else if (distanceOrange < 12) {
+            if (movingIntoPortal(
+                player,
+                orangeNormalX,
+                orangeNormalY
+            )) {
+                teleportPlayer(
+                    orangePortal,
+                    bluePortal,
+                    orangeNormalX,
+                    orangeNormalY,
+                    blueNormalX,
+                    blueNormalY
+                )
+            }
         }
     }
 
-    // =========================================================
-    // TELEPORT CHECK
-    // =========================================================
 
-    game.onUpdate(function () {
+    function movingIntoPortal(
+        sprite: Sprite,
+        nx: number,
+        ny: number
+    ): boolean {
+        let movement = sprite.vx * nx + sprite.vy * ny
 
-        if (!physicsOn)
-            return
+        return movement > 0
+    }
 
-        if (!playerSprite)
-            return
 
-        if (!bluePortalSprite ||
-            !orangePortalSprite)
-            return
-
-        if (isTeleportingNow)
-            return
-
-        if (playerSprite.overlapsWith(
-            bluePortalSprite
-        )) {
-
-            beginPortalTeleport(
-                bluePortalSprite,
-                orangePortalSprite,
-                blueNX,
-                blueNY,
-                orangeNX,
-                orangeNY
-            )
-
-            return
-        }
-
-        if (playerSprite.overlapsWith(
-            orangePortalSprite
-        )) {
-
-            beginPortalTeleport(
-                orangePortalSprite,
-                bluePortalSprite,
-                orangeNX,
-                orangeNY,
-                blueNX,
-                blueNY
-            )
-        }
-    })
-
-    // =========================================================
-    // BEGIN TELEPORT
-    // =========================================================
-
-    function beginPortalTeleport(
+    function teleportPlayer(
         entrance: Sprite,
         exit: Sprite,
         entranceNX: number,
         entranceNY: number,
         exitNX: number,
         exitNY: number
-    ): void {
+    ) {
+        teleporting = true
+        lastTeleportTime = game.runtime()
 
-        if (isTeleportingNow)
-            return
+        let oldVX = player.vx
+        let oldVY = player.vy
 
-        isTeleportingNow = true
-        teleportClock = 0
+        let oldX = player.x
+        let oldY = player.y
 
-        startX = playerSprite.x
-        startY = playerSprite.y
+        // Small offset so the player doesn't get stuck
+        let entranceX = entrance.x + entranceNX * 8
+        let entranceY = entrance.y + entranceNY * 8
 
-        oldVX = playerSprite.vx
-        oldVY = playerSprite.vy
+        let exitX = exit.x + exitNX * 12
+        let exitY = exit.y + exitNY * 12
 
-        enterNX = entranceNX
-        enterNY = entranceNY
+        player.setFlag(SpriteFlag.Ghost, true)
 
-        exitNX = exitNX
-        exitNY = exitNY
+        let startTime = game.runtime()
 
-        destinationX =
-            exit.x +
-            exitNX * exitDistance
-
-        destinationY =
-            exit.y +
-            exitNY * exitDistance
-
-        for (let event of enterEvents) {
-            event()
-        }
-    }
-
-    // =========================================================
-    // SMOOTH TELEPORT
-    // =========================================================
-
-    game.onUpdateInterval(
-        10,
-        function () {
-
-            if (!isTeleportingNow)
+        game.onUpdate(function () {
+            if (!teleporting) {
                 return
-
-            if (!playerSprite)
-                return
-
-            teleportClock += 10
-
-            let amount =
-                teleportClock /
-                teleportDuration
-
-            if (amount > 1)
-                amount = 1
-
-            // Smoothstep interpolation.
-            let smooth =
-                amount *
-                amount *
-                (3 - 2 * amount)
-
-            playerSprite.x =
-                startX +
-                (destinationX - startX) *
-                smooth
-
-            playerSprite.y =
-                startY +
-                (destinationY - startY) *
-                smooth
-
-            if (momentumOn) {
-
-                playerSprite.vx = oldVX
-                playerSprite.vy = oldVY
             }
 
-            if (amount >= 1) {
+            let elapsed = game.runtime() - startTime
+            let progress = elapsed / teleportTime
 
-                finishPortalTeleport()
+            if (progress >= 1) {
+                player.x = exitX
+                player.y = exitY
+
+                player.setScale(100, ScaleAnchor.Middle)
+
+                player.vx = oldVX
+                player.vy = oldVY
+
+                player.setFlag(SpriteFlag.Ghost, false)
+
+                teleporting = false
+                return
             }
-        }
-    )
 
-    // =========================================================
-    // FINISH TELEPORT
-    // =========================================================
+            if (progress < 0.5) {
+                // Entering portal
+                let p = progress * 2
 
-    function finishPortalTeleport(): void {
+                player.x = oldX +
+                    (entranceX - oldX) * p
 
-        if (!playerSprite)
-            return
+                player.y = oldY +
+                    (entranceY - oldY) * p
 
-        if (momentumOn) {
+                let scale = 100 - p * 75
+                player.setScale(
+                    scale,
+                    ScaleAnchor.Middle
+                )
+            } else {
+                // Coming out of portal
+                let q = (progress - 0.5) * 2
 
-            applyMomentum(
-                oldVX,
-                oldVY,
-                enterNX,
-                enterNY,
-                exitNX,
-                exitNY
-            )
+                player.x = entranceX +
+                    (exitX - entranceX) * q
 
-        } else {
+                player.y = entranceY +
+                    (exitY - entranceY) * q
 
-            playerSprite.vx = 0
-            playerSprite.vy = 0
-        }
+                let scale2 = 25 + q * 75
 
-        isTeleportingNow = false
-
-        for (let event2 of exitEvents) {
-            event2()
-        }
+                player.setScale(
+                    scale2,
+                    ScaleAnchor.Middle
+                )
+            }
+        })
     }
 
-    // =========================================================
-    // MOMENTUM
-    // =========================================================
 
-    function applyMomentum(
-        vx: number,
-        vy: number,
-        inNX: number,
-        inNY: number,
-        outNX: number,
-        outNY: number
-    ): void {
-
-        let inTX = -inNY
-        let inTY = inNX
-
-        let outTX = -outNY
-        let outTY = outNX
-
-        let tangent =
-            vx * inTX +
-            vy * inTY
-
-        let normal =
-            vx * inNX +
-            vy * inNY
-
-        let outgoingNormal =
-            -normal
-
-        playerSprite.vx =
-            outTX * tangent +
-            outNX * outgoingNormal
-
-        playerSprite.vy =
-            outTY * tangent +
-            outNY * outgoingNormal
-    }
-
-    // =========================================================
-    // ENTER EVENT
-    // =========================================================
-
-    //% block="on player enter portal"
-    //% blockId=smoothPortals_enter
-    export function whenPlayerEntersPortal(
-        handler: () => void
-    ): void {
-
-        enterEvents.push(handler)
-    }
-
-    // =========================================================
-    // EXIT EVENT
-    // =========================================================
-
-    //% block="on player exit portal"
-    //% blockId=smoothPortals_exit
-    export function whenPlayerExitsPortal(
-        handler: () => void
-    ): void {
-
-        exitEvents.push(handler)
-    }
-
-    // =========================================================
-    // STATUS
-    // =========================================================
-
-    //% block="blue portal exists"
-    //% blockId=smoothPortals_blueExists
-    export function hasBluePortal(): boolean {
-
-        return bluePortalSprite != null
-    }
-
-    //% block="orange portal exists"
-    //% blockId=smoothPortals_orangeExists
-    export function hasOrangePortal(): boolean {
-
-        return orangePortalSprite != null
-    }
-
-    //% block="both portals exist"
-    //% blockId=smoothPortals_bothExist
-    export function hasBothPortals(): boolean {
-
-        return bluePortalSprite != null &&
-            orangePortalSprite != null
-    }
-
-    //% block="player is going through portal"
-    //% blockId=smoothPortals_teleporting
-    export function playerIsTeleporting(): boolean {
-
-        return isTeleportingNow
-    }
-
-    // =========================================================
-    // REMOVE BLUE
-    // =========================================================
+    // ============================================================
+    // REMOVE PORTALS
+    // ============================================================
 
     //% block="remove blue portal"
-    //% blockId=smoothPortals_removeBlue
-    export function deleteBluePortal(): void {
-
-        if (bluePortalSprite) {
-
-            bluePortalSprite.destroy()
-            bluePortalSprite = null
+    export function removeBluePortal() {
+        if (bluePortal != null) {
+            bluePortal.destroy()
+            bluePortal = null
         }
     }
-
-    // =========================================================
-    // REMOVE ORANGE
-    // =========================================================
 
     //% block="remove orange portal"
-    //% blockId=smoothPortals_removeOrange
-    export function deleteOrangePortal(): void {
-
-        if (orangePortalSprite) {
-
-            orangePortalSprite.destroy()
-            orangePortalSprite = null
+    export function removeOrangePortal() {
+        if (orangePortal != null) {
+            orangePortal.destroy()
+            orangePortal = null
         }
     }
 
-    // =========================================================
-    // REMOVE BOTH
-    // =========================================================
-
-    //% block="remove both portals"
-    //% blockId=smoothPortals_removeBoth
-    export function deleteBothPortals(): void {
-
-        deleteBluePortal()
-        deleteOrangePortal()
+    //% block="remove all portals"
+    export function removeAllPortals() {
+        removeBluePortal()
+        removeOrangePortal()
     }
 
-    // =========================================================
-    // BUTTON A
-    // =========================================================
 
-    controller.A.onEvent(
-        ControllerButtonEvent.Pressed,
-        function () {
+    // ============================================================
+    // GAME LOOP
+    // ============================================================
 
-            if (selectedBlueButton ==
-                PortalButton.A) {
+    game.onUpdate(function () {
 
-                shootBluePortal()
-            }
-
-            if (selectedOrangeButton ==
-                PortalButton.A) {
-
-                shootOrangePortal()
-            }
+        for (let projectile2 of sprites.allOfKind(blueProjectileKind)) {
+            checkProjectile(projectile2, true)
         }
-    )
 
-    // =========================================================
-    // BUTTON B
-    // =========================================================
-
-    controller.B.onEvent(
-        ControllerButtonEvent.Pressed,
-        function () {
-
-            if (selectedBlueButton ==
-                PortalButton.B) {
-
-                shootBluePortal()
-            }
-
-            if (selectedOrangeButton ==
-                PortalButton.B) {
-
-                shootOrangePortal()
-            }
+        for (let projectile3 of sprites.allOfKind(orangeProjectileKind)) {
+            checkProjectile(projectile3, false)
         }
-    )
 
-    // =========================================================
-    // LEFT
-    // =========================================================
+        tryTeleport()
+    })
 
-    controller.left.onEvent(
-        ControllerButtonEvent.Pressed,
-        function () {
 
-            if (selectedBlueButton ==
-                PortalButton.Left) {
+    // ============================================================
+    // CONTROLLER EVENTS
+    // ============================================================
 
-                shootBluePortal()
-            }
-
-            if (selectedOrangeButton ==
-                PortalButton.Left) {
-
-                shootOrangePortal()
-            }
+    controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+        if (blueButton == PortalButton.A) {
+            shootBluePortal()
         }
-    )
 
-    // =========================================================
-    // RIGHT
-    // =========================================================
-
-    controller.right.onEvent(
-        ControllerButtonEvent.Pressed,
-        function () {
-
-            if (selectedBlueButton ==
-                PortalButton.Right) {
-
-                shootBluePortal()
-            }
-
-            if (selectedOrangeButton ==
-                PortalButton.Right) {
-
-                shootOrangePortal()
-            }
+        if (orangeButton == PortalButton.A) {
+            shootOrangePortal()
         }
-    )
+    })
 
-    // =========================================================
-    // UP
-    // =========================================================
 
-    controller.up.onEvent(
-        ControllerButtonEvent.Pressed,
-        function () {
-
-            if (selectedBlueButton ==
-                PortalButton.Up) {
-
-                shootBluePortal()
-            }
-
-            if (selectedOrangeButton ==
-                PortalButton.Up) {
-
-                shootOrangePortal()
-            }
+    controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
+        if (blueButton == PortalButton.B) {
+            shootBluePortal()
         }
-    )
 
-    // =========================================================
-    // DOWN
-    // =========================================================
-
-    controller.down.onEvent(
-        ControllerButtonEvent.Pressed,
-        function () {
-
-            if (selectedBlueButton ==
-                PortalButton.Down) {
-
-                shootBluePortal()
-            }
-
-            if (selectedOrangeButton ==
-                PortalButton.Down) {
-
-                shootOrangePortal()
-            }
+        if (orangeButton == PortalButton.B) {
+            shootOrangePortal()
         }
-    )
+    })
+
+
+    controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
+        if (blueButton == PortalButton.Left) {
+            shootBluePortal()
+        }
+
+        if (orangeButton == PortalButton.Left) {
+            shootOrangePortal()
+        }
+    })
+
+
+    controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
+        if (blueButton == PortalButton.Right) {
+            shootBluePortal()
+        }
+
+        if (orangeButton == PortalButton.Right) {
+            shootOrangePortal()
+        }
+    })
+
+
+    controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
+        if (blueButton == PortalButton.Up) {
+            shootBluePortal()
+        }
+
+        if (orangeButton == PortalButton.Up) {
+            shootOrangePortal()
+        }
+    })
+
+
+    controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
+        if (blueButton == PortalButton.Down) {
+            shootBluePortal()
+        }
+
+        if (orangeButton == PortalButton.Down) {
+            shootOrangePortal()
+        }
+    })
 }
