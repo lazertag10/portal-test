@@ -1,8 +1,14 @@
+namespace SpriteKind {
+    export const blueBulletKind = SpriteKind.create()
+    export const orangeBulletKind = SpriteKind.create()
+}
+
+
 namespace smoothPortals {
 
-    // =========================================================
+    
     // BUTTON ENUM
-    // =========================================================
+    
 
     export enum PortalButton {
         //% block="A"
@@ -24,65 +30,57 @@ namespace smoothPortals {
         Down = 5
     }
 
-    // =========================================================
-    // SPRITE KINDS
-    // =========================================================
+    // INTERFACE
+    interface Portal {
+        sprite: Sprite
+        nx: number
+        ny: number
+    }
 
-    const blueBulletKind = SpriteKind.create()
-    const orangeBulletKind = SpriteKind.create()
 
-    // =========================================================
+    
     // VARIABLES
-    // =========================================================
+    
 
     let playerSprite: Sprite = null
-
-    let bluePortalSprite: Sprite = null
-    let orangePortalSprite: Sprite = null
-
-    let blueNX = 0
-    let blueNY = -1
-
-    let orangeNX = 0
-    let orangeNY = -1
-
+    
+    let bluePortal: Portal = null
+    let orangePortal: Portal = null
+    
     let selectedBlueButton = PortalButton.A
     let selectedOrangeButton = PortalButton.B
-
+    
     let momentumOn = true
     let physicsOn = true
-
+    
     let isTeleportingNow = false
-
+    
     let teleportClock = 0
-
+    
     let startX = 0
     let startY = 0
-
+    
     let destinationX = 0
     let destinationY = 0
-
+    
     let oldVX = 0
     let oldVY = 0
-
+    
     let enterNX = 0
     let enterNY = 0
-
+    
     let exitNX = 0
     let exitNY = 0
-
+    
     let enterEvents: (() => void)[] = []
     let exitEvents: (() => void)[] = []
-
-    const bulletSpeed = 140
-    const bulletLife = 3000
 
     const teleportDuration = 300
     const exitDistance = 20
 
-    // =========================================================
+    
     // PORTAL IMAGES
-    // =========================================================
+    
 
     const blueImage = img`
         . . . . 8 8 8 8 . . . .
@@ -114,9 +112,9 @@ namespace smoothPortals {
         . . 5 4 4 4 4 4 4 5 . .
     `
 
-    // =========================================================
+    
     // SET PLAYER
-    // =========================================================
+    
 
     //% block="set portal player to %sprite"
     //% blockId=smoothPortals_setPlayer
@@ -124,9 +122,9 @@ namespace smoothPortals {
         playerSprite = sprite
     }
 
-    // =========================================================
+    
     // BUTTON SETTINGS
-    // =========================================================
+    
 
     //% block="set blue portal button to %button"
     //% blockId=smoothPortals_blueButton
@@ -144,9 +142,9 @@ namespace smoothPortals {
         selectedOrangeButton = button
     }
 
-    // =========================================================
+    
     // MOMENTUM
-    // =========================================================
+    
 
     //% block="set portal momentum to %enabled"
     //% blockId=smoothPortals_setMomentum
@@ -162,9 +160,9 @@ namespace smoothPortals {
         return momentumOn
     }
 
-    // =========================================================
+    
     // PHYSICS
-    // =========================================================
+    
 
     //% block="set portal physics to %enabled"
     //% blockId=smoothPortals_setPhysics
@@ -174,9 +172,9 @@ namespace smoothPortals {
         physicsOn = enabled
     }
 
-    // =========================================================
+    
     // FIRE BLUE
-    // =========================================================
+    
 
     //% block="shoot blue portal"
     //% blockId=smoothPortals_shootBlue
@@ -191,9 +189,9 @@ namespace smoothPortals {
         shootPortal(true)
     }
 
-    // =========================================================
+    
     // FIRE ORANGE
-    // =========================================================
+    
 
     //% block="shoot orange portal"
     //% blockId=smoothPortals_shootOrange
@@ -208,9 +206,9 @@ namespace smoothPortals {
         shootPortal(false)
     }
 
-    // =========================================================
+    
     // SHOOT PORTAL
-    // =========================================================
+    
 
     function shootPortal(isBlue: boolean): void {
 
@@ -267,9 +265,9 @@ namespace smoothPortals {
         bullet.lifespan = bulletLife
     }
 
-    // =========================================================
+    
     // BLUE BULLET
-    // =========================================================
+    
 
     game.onUpdate(function () {
 
@@ -282,9 +280,9 @@ namespace smoothPortals {
         }
     })
 
-    // =========================================================
+    
     // ORANGE BULLET
-    // =========================================================
+    
 
     game.onUpdate(function () {
 
@@ -297,9 +295,9 @@ namespace smoothPortals {
         }
     })
 
-    // =========================================================
+    
     // BULLET COLLISION
-    // =========================================================
+    
 
     function checkBullet(
         bullet: Sprite,
@@ -357,9 +355,9 @@ namespace smoothPortals {
         bullet.destroy()
     }
 
-    // =========================================================
+    
     // CREATE PORTAL
-    // =========================================================
+    
 
     function createPortal(
         isBlue: boolean,
@@ -368,60 +366,49 @@ namespace smoothPortals {
         nx: number,
         ny: number
     ): void {
-
+    
+        const image = isBlue ? blueImage : orangeImage
+    
+        const portalSprite = sprites.create(
+            image,
+            SpriteKind.Food
+        )
+    
+        portalSprite.setFlag(
+            SpriteFlag.Ghost,
+            true
+        )
+    
+        portalSprite.setPosition(
+            x,
+            y
+        )
+    
+        const portal: Portal = {
+            sprite: portalSprite,
+            nx: nx,
+            ny: ny
+        }
+    
         if (isBlue) {
-
-            if (bluePortalSprite)
-                bluePortalSprite.destroy()
-
-            bluePortalSprite =
-                sprites.create(
-                    blueImage,
-                    SpriteKind.Food
-                )
-
-            bluePortalSprite.setFlag(
-                SpriteFlag.Ghost,
-                true
-            )
-
-            bluePortalSprite.setPosition(
-                x,
-                y
-            )
-
-            blueNX = nx
-            blueNY = ny
-
+    
+            if (bluePortal)
+                bluePortal.sprite.destroy()
+    
+            bluePortal = portal
+    
         } else {
-
-            if (orangePortalSprite)
-                orangePortalSprite.destroy()
-
-            orangePortalSprite =
-                sprites.create(
-                    orangeImage,
-                    SpriteKind.Food
-                )
-
-            orangePortalSprite.setFlag(
-                SpriteFlag.Ghost,
-                true
-            )
-
-            orangePortalSprite.setPosition(
-                x,
-                y
-            )
-
-            orangeNX = nx
-            orangeNY = ny
+    
+            if (orangePortal)
+                orangePortal.sprite.destroy()
+    
+            orangePortal = portal
         }
     }
 
-    // =========================================================
+    
     // TELEPORT CHECK
-    // =========================================================
+    
 
     game.onUpdate(function () {
 
@@ -431,55 +418,41 @@ namespace smoothPortals {
         if (!playerSprite)
             return
 
-        if (!bluePortalSprite ||
-            !orangePortalSprite)
-            return
+        if (!bluePortal || !orangePortal) return;
 
         if (isTeleportingNow)
             return
 
         if (playerSprite.overlapsWith(
-            bluePortalSprite
+            bluePortal.sprite
         )) {
-
+        
             beginPortalTeleport(
-                bluePortalSprite,
-                orangePortalSprite,
-                blueNX,
-                blueNY,
-                orangeNX,
-                orangeNY
+                bluePortal,
+                orangePortal
             )
-
+        
             return
         }
 
         if (playerSprite.overlapsWith(
-            orangePortalSprite
+            orangePortal.sprite
         )) {
-
+        
             beginPortalTeleport(
-                orangePortalSprite,
-                bluePortalSprite,
-                orangeNX,
-                orangeNY,
-                blueNX,
-                blueNY
+                orangePortal,
+                bluePortal
             )
         }
     })
 
-    // =========================================================
+    
     // BEGIN TELEPORT
-    // =========================================================
+    
 
     function beginPortalTeleport(
-        entrance: Sprite,
-        exit: Sprite,
-        entranceNX: number,
-        entranceNY: number,
-        exitNX: number,
-        exitNY: number
+        entrance: Portal,
+        exit: Portal
     ): void {
 
         if (isTeleportingNow)
@@ -513,9 +486,9 @@ namespace smoothPortals {
         }
     }
 
-    // =========================================================
+    
     // SMOOTH TELEPORT
-    // =========================================================
+    
 
     game.onUpdateInterval(
         10,
@@ -565,9 +538,9 @@ namespace smoothPortals {
         }
     )
 
-    // =========================================================
+    
     // FINISH TELEPORT
-    // =========================================================
+    
 
     function finishPortalTeleport(): void {
 
@@ -598,9 +571,9 @@ namespace smoothPortals {
         }
     }
 
-    // =========================================================
+    
     // MOMENTUM
-    // =========================================================
+    
 
     function applyMomentum(
         vx: number,
@@ -637,9 +610,9 @@ namespace smoothPortals {
             outNY * outgoingNormal
     }
 
-    // =========================================================
+    
     // ENTER EVENT
-    // =========================================================
+    
 
     //% block="on player enter portal"
     //% blockId=smoothPortals_enter
@@ -650,9 +623,9 @@ namespace smoothPortals {
         enterEvents.push(handler)
     }
 
-    // =========================================================
+    
     // EXIT EVENT
-    // =========================================================
+    
 
     //% block="on player exit portal"
     //% blockId=smoothPortals_exit
@@ -663,30 +636,29 @@ namespace smoothPortals {
         exitEvents.push(handler)
     }
 
-    // =========================================================
+    
     // STATUS
-    // =========================================================
+    
 
     //% block="blue portal exists"
     //% blockId=smoothPortals_blueExists
     export function hasBluePortal(): boolean {
 
-        return bluePortalSprite != null
+        return bluePortal != null
     }
 
     //% block="orange portal exists"
     //% blockId=smoothPortals_orangeExists
     export function hasOrangePortal(): boolean {
 
-        return orangePortalSprite != null
+        return orangePortal != null
     }
 
     //% block="both portals exist"
     //% blockId=smoothPortals_bothExist
     export function hasBothPortals(): boolean {
 
-        return bluePortalSprite != null &&
-            orangePortalSprite != null
+        return bluePortal != null && orangePortal != null
     }
 
     //% block="player is going through portal"
@@ -696,39 +668,39 @@ namespace smoothPortals {
         return isTeleportingNow
     }
 
-    // =========================================================
+    
     // REMOVE BLUE
-    // =========================================================
+    
 
     //% block="remove blue portal"
     //% blockId=smoothPortals_removeBlue
     export function deleteBluePortal(): void {
 
-        if (bluePortalSprite) {
+        if (bluePortal) {
 
-            bluePortalSprite.destroy()
-            bluePortalSprite = null
+            bluePortal.sprite.destroy()
+            bluePortal = null
         }
     }
 
-    // =========================================================
+    
     // REMOVE ORANGE
-    // =========================================================
+    
 
     //% block="remove orange portal"
     //% blockId=smoothPortals_removeOrange
     export function deleteOrangePortal(): void {
 
-        if (orangePortalSprite) {
+        if (orangePortal) {
 
-            orangePortalSprite.destroy()
-            orangePortalSprite = null
+            orangePortal.destroy()
+            orangePortal = null
         }
     }
 
-    // =========================================================
+    
     // REMOVE BOTH
-    // =========================================================
+    
 
     //% block="remove both portals"
     //% blockId=smoothPortals_removeBoth
@@ -738,9 +710,9 @@ namespace smoothPortals {
         deleteOrangePortal()
     }
 
-    // =========================================================
+    
     // BUTTON A
-    // =========================================================
+    
 
     controller.A.onEvent(
         ControllerButtonEvent.Pressed,
@@ -760,9 +732,9 @@ namespace smoothPortals {
         }
     )
 
-    // =========================================================
+    
     // BUTTON B
-    // =========================================================
+    
 
     controller.B.onEvent(
         ControllerButtonEvent.Pressed,
@@ -782,9 +754,9 @@ namespace smoothPortals {
         }
     )
 
-    // =========================================================
+    
     // LEFT
-    // =========================================================
+    
 
     controller.left.onEvent(
         ControllerButtonEvent.Pressed,
@@ -804,9 +776,9 @@ namespace smoothPortals {
         }
     )
 
-    // =========================================================
+    
     // RIGHT
-    // =========================================================
+    
 
     controller.right.onEvent(
         ControllerButtonEvent.Pressed,
@@ -826,9 +798,9 @@ namespace smoothPortals {
         }
     )
 
-    // =========================================================
+    
     // UP
-    // =========================================================
+    
 
     controller.up.onEvent(
         ControllerButtonEvent.Pressed,
@@ -848,9 +820,9 @@ namespace smoothPortals {
         }
     )
 
-    // =========================================================
+    
     // DOWN
-    // =========================================================
+    
 
     controller.down.onEvent(
         ControllerButtonEvent.Pressed,
